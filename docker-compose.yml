@@ -1,0 +1,27 @@
+services:
+  # 1. The Cache Layer
+  redis:
+    image: redis:alpine
+    container_name: rate-limiter-redis
+    ports:
+      - "6379:6379"
+
+  # 2. The Java Backend
+  backend:
+    build: ./backend
+    container_name: rate-limiter-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+    environment:
+      - SPRING_DATA_REDIS_HOST=redis # Connects to the service name above
+
+  # 3. The Angular Frontend
+  frontend:
+    build: ./frontend
+    container_name: security-dashboard-ui
+    ports:
+      - "4200:80" # Maps container port 80 to your machine 4200
+    depends_on:
+      - backend
