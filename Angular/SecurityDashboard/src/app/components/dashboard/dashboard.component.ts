@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiDataService } from '../../services/api-data.service';
 import { Chart, registerables } from 'chart.js';
@@ -6,22 +6,26 @@ import { Subscription } from 'rxjs';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-Chart.register(...registerables); // Required for Chart.js 3+
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
+  standalone: true,
   imports: [CommonModule]
 })
-export class DashboardComponent implements OnInit, OnDestroy {
+export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private statsSubscription!: Subscription;
   public chart: any;
   public lastUpdated: Date = new Date();
 
-  // 1. Inject the service here
   constructor(private apiService: ApiDataService) {}
 
   ngOnInit(): void {
+    // Keep empty or for non-DOM logic
+  }
+
+  ngAfterViewInit(): void {
     this.initChart();
     this.startPolling();
   }
@@ -32,20 +36,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  /*private initChart(): void {
-    // Initialize chart configuration here
-    this.chart = new Chart('chartCanvas', {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: []
-      },
-      options: {}
-    });
-  }*/
-
- initChart() {
-    Chart.register(...registerables); // Register plugins
+  initChart() {
     this.chart = new Chart('canvas', {
       type: 'bar',
       data: {
@@ -65,29 +56,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  /*private startPolling(): void {
-    // Poll API data and update chart
-    this.statsSubscription = this.apiService.getStats().subscribe(
-      (data: any) => {
-        // Update chart with new data
-      }
-    );
-  }*/
-
-    startPolling() {
+  startPolling() {
     this.statsSubscription = this.apiService.getSecurityStats().subscribe(response => {
-      // Mapping the Java Map (IP -> Count) to Chart arrays
       const ipLabels = Object.keys(response.activeRequests); 
       const requestCounts = Object.values(response.activeRequests); 
 
-      this.chart.data.labels = ipLabels;
-      this.chart.data.datasets[0].data = requestCounts;
-      this.chart.update(); // Refreshes the visual bars automatically
-      this.lastUpdated = new Date();
+      if (this.chart) {
+        this.chart.data.labels = ipLabels;
+        this.chart.data.datasets[0].data = requestCounts;
+        this.chart.update(); 
+        this.lastUpdated = new Date();
+      }
     });
   }
 
-  // "Reset Redis" Button Logic
   resetStats() {
     if(confirm("Are you sure you want to clear all rate limit data?")) {
       this.apiService.resetRateLimits().subscribe(() => {
@@ -96,12 +78,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  // "Download PDF" Button Logic
   downloadReport() {
     const doc = new jsPDF();
     doc.text("Security Report: Rate Limiter Stats", 14, 15);
     
-    // Grabs data currently shown in your Chart/Table
     const tableData = this.chart.data.labels.map((label: string, i: number) => [
       label, 
       this.chart.data.datasets[0].data[i],
@@ -116,6 +96,4 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     doc.save(`Security_Report_${this.lastUpdated.getTime()}.pdf`);
   }
-
-  
 }

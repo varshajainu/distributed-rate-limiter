@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 5s # Scrape every 5 seconds for real-time graphs
+
+scrape_configs:
+  - job_name: 'spring-boot-rate-limiter'
+    metrics_path: '/actuator/prometheus' # The endpoint we enabled in properties
+    static_configs:
+      - targets: ['host.docker.internal:8080'] # Points to your Java app
