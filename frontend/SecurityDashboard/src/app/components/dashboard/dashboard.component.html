@@ -1,0 +1,96 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="display-5 font-weight-bold text-primary mb-0">Security Monitor</h1>
+      <p class="text-muted">
+        Last updated: {{ lastUpdated | date:'mediumTime' }} 
+        <!--<span *ngIf="redisOnline" class="badge badge-pill badge-success ml-2">● Redis Online</span>
+        <span *ngIf="!redisOnline" class="badge badge-pill badge-danger ml-2">● Redis Offline (Fail-Safe Active)</span>!-->
+        @if (redisOnline) {
+    <span class="badge rounded-pill bg-success ms-2">● Redis Online</span>
+  } @else {
+    <span class="badge rounded-pill bg-danger ms-2">● Redis Offline (Fail-Safe Active)</span>
+  }
+      </p>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-outline-danger me-2" (click)="resetStats()">
+        <i class="fas fa-trash"></i> Reset Redis
+      </button>
+      <button class="btn btn-primary" (click)="downloadReport()">
+        <i class="fas fa-file-pdf"></i> Download Audit PDF
+      </button>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8 mb-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Traffic Visualization</h5>
+        </div>
+        <div class="card-body">
+          <div style="display: block; width: 100%; height: 350px;">
+            <canvas id="canvas"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">All Monitoring Labels</h5>
+        </div>
+        <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center" 
+                *ngFor="let ip of chart?.data?.labels; let i = index">
+              <code>{{ ip }}</code>
+              <span class="badge bg-primary rounded-pill">
+                {{ chart?.data?.datasets[0]?.data[i] }} req/m
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mt-2">
+    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Security Watchlist / Blocklist</h5>
+      <div>
+        <button class="btn btn-sm btn-light me-3" (click)="resetStats()">
+          <i class="fas fa-sync-alt"></i> Clear Logs
+        </button>
+        <small>Threshold: 10 requests/min</small>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead class="thead-light">
+          <tr>
+            <th>IP Address</th>
+            <th>Request Count</th>
+            <th>Threat Level</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let ip of blockedIPs">
+            <td><span class="badge bg-dark">{{ ip.address }}</span></td>
+            <td><strong>{{ ip.count }}</strong></td>
+            <td><span class="text-danger font-weight-bold">● High Risk (Blocked)</span></td>
+            <td>{{ ip.time | date:'mediumTime' }}</td>
+          </tr>
+          <tr *ngIf="blockedIPs.length === 0">
+            <td colspan="4" class="text-center text-muted py-4">
+              No active threats detected. System is secure.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
